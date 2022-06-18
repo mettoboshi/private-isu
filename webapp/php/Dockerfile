@@ -12,8 +12,12 @@ RUN pecl install memcached \
 RUN curl -sS https://getcomposer.org/installer | php \
   && mv composer.phar /usr/local/bin/composer
 
+# RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
+RUN cp /usr/local/etc/php/php.ini-development /usr/local/etc/php/php.ini
 COPY ./composer.json /var/www/html
 COPY ./composer.lock /var/www/html
+COPY ./php.ini /usr/local/etc/php/conf.d/php.ini
+
 WORKDIR /var/www/html
 
 RUN composer install --no-dev
