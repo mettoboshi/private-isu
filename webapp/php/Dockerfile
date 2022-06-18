@@ -5,6 +5,7 @@ RUN apt update && apt install -y \
 
 RUN docker-php-ext-install pdo pdo_mysql
 
+RUN apt-get install -y vim
 RUN pecl install memcached \
   && docker-php-ext-enable memcached
 
