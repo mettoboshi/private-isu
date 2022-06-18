@@ -148,12 +148,50 @@ $container->set('helper', function ($c) {
                 if ($post['user']['del_flg'] == 0) {
                     $posts[] = $post;
                 }
+
                 if (count($posts) >= POSTS_PER_PAGE) {
                     break;
                 }
             }
             return $posts;
         }
+
+        public function make_posts2(array $results, $options = []) {
+            $options += ['all_comments' => false];
+            $all_comments = $options['all_comments'];
+
+            $posts = [];
+            foreach ($results as $post) {
+                $post['comment_count'] = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?', $post['id'])['count'];
+                $query = 'SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC';
+                if (!$all_comments) {
+                    $query .= ' LIMIT 3';
+                }
+
+                $ps = $this->db()->prepare($query);
+                $ps->execute([$post['id']]);
+                $comments = $ps->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($comments as &$comment) {
+                    $comment['user'] = $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $comment['user_id']);
+                }
+                unset($comment);
+                $post['comments'] = array_reverse($comments);
+
+//                $post['user'] = $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $post['user_id']);
+//                if ($post['user']['del_flg'] == 0) {
+//                    $posts[] = $post;
+//                }
+                $post['user']['account_name'] = $post['account_name'];
+                $posts[] = $post;
+
+                if (count($posts) >= POSTS_PER_PAGE) {
+                    break;
+                }
+            }
+            return $posts;
+        }
+
+
 
     };
 });
@@ -295,11 +333,12 @@ $app->get('/', function (Request $request, Response $response) {
     $me = $this->get('helper')->get_session_user();
 
     $db = $this->get('db');
-    $ps = $db->prepare('SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC');
+//    $ps = $db->prepare('SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` ORDER BY `created_at` DESC');
+    $ps = $db->prepare('SELECT p.`id`, p.`user_id`, p.`body`, p.`mime`, p.`created_at`, u.`account_name` FROM `posts` AS p JOIN `users` AS u ON (p.user_id = u.id) WHERE u.del_flg = 0 ORDER BY p.created_at DESC LIMIT 20');
     $ps->execute();
     $results = $ps->fetchAll(PDO::FETCH_ASSOC);
-    $posts = $this->get('helper')->make_posts($results);
-
+    $posts = $this->get('helper')->make_posts2($results);
+//    var_dump($posts);
     return $this->get('view')->render($response, 'index.php', [
         'posts' => $posts,
         'me' => $me,
@@ -312,6 +351,7 @@ $app->get('/posts', function (Request $request, Response $response) {
     $max_created_at = $params['max_created_at'] ?? null;
     $db = $this->get('db');
     $ps = $db->prepare('SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` WHERE `created_at` <= ? ORDER BY `created_at` DESC');
+//    $ps = $db->prepare('SELECT `p.id`, `p.use_id`, `p.body`, `p.mine`, `p.created_at`, `u.account_name` FROM `posts` AS p JOIN `users` AS u ON (p.user_id = u.id) WHERE u.del_flg = 0 ORDER BY p.created_at DESC LIMIT 20');
     $ps->execute([$max_created_at === null ? null : $max_created_at]);
     $results = $ps->fetchAll(PDO::FETCH_ASSOC);
     $posts = $this->get('helper')->make_posts($results);
@@ -493,6 +533,7 @@ $app->get('/@{account_name}', function (Request $request, Response $response, $a
     }
 
     $ps = $db->prepare('SELECT `id`, `user_id`, `body`, `created_at`, `mime` FROM `posts` WHERE `user_id` = ? ORDER BY `created_at` DESC');
+//    $ps = $db->prepare('SELECT `p.id`, `p.use_id`, `p.body`, `p.mine`, `p.created_at`, `u.account_name` FROM `posts` AS p JOIN `users` AS u ON (p.user_id = u.id) WHERE u.del_flg = 0 ORDER BY p.created_at DESC LIMIT 20');
     $ps->execute([$user['id']]);
     $results = $ps->fetchAll(PDO::FETCH_ASSOC);
     $posts = $this->get('helper')->make_posts($results);
