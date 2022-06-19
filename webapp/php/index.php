@@ -431,9 +431,12 @@ $app->post('/', function (Request $request, Response $response) {
         $pid = $db->lastInsertId();
 
         # バイナリを保存する
-        $image_file_path = IMAGE_DIR . "/{$pid}.{$ext}";
-        file_put_contents($image_file_path, $_FILES['file']['tmp_name']);
-
+        error_log($_FILES['file']['size']);
+        if($_FILES['file']['size'] > 0) {
+            $image_file_path = IMAGE_DIR . "/{$pid}.{$ext}";
+            error_log('!!!post_access');
+            file_put_contents($image_file_path,  file_get_contents($_FILES['file']['tmp_name']));
+        }
         return redirect($response, "/posts/{$pid}", 302);
     } else {
         $this->get('flash')->addMessage('notice', '画像が必須です');
@@ -455,9 +458,12 @@ $app->get('/image/{id}.{ext}', function (Request $request, Response $response, $
         $response->getBody()->write($post['imgdata']);
 //        file_put_contents('./xhprof/profile.xhprof', json_encode(tideways_xhprof_disable()));
 
-        $image_file_path = IMAGE_DIR . "/{$args['id']}.{$args['ext']}";
-        error_log($image_file_path);
-        file_put_contents($image_file_path, $post['imgdata']);
+        if(empty($post['imgdata']) === false) {
+            $image_file_path = IMAGE_DIR . "/{$args['id']}.{$args['ext']}";
+            error_log('!!!get_access');
+            error_log($image_file_path);
+            file_put_contents($image_file_path, $post['imgdata']);
+        }
 
         return $response->withHeader('Content-Type', $post['mime']);
     }
