@@ -29,7 +29,7 @@ services:
       - memcached
     volumes:
       - ./public:/home/public
-        #- ./php:/var/www/html
+      - ./php/xhprof:/var/www/html/xhprof
     init: true
 
   mysql:
