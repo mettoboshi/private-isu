@@ -26,6 +26,8 @@ if (is_file($file)) {
 const POSTS_PER_PAGE = 20;
 const UPLOAD_LIMIT = 10 * 1024 * 1024;
 
+define("IMAGE_DIR", '/home/public/image');
+
 // memcached session
 $memd_addr = $_SERVER['ISUCONP_MEMCACHED_ADDRESS'];
 if ($memd_addr == '') {
@@ -394,13 +396,18 @@ $app->post('/', function (Request $request, Response $response) {
 
     if ($_FILES['file']) {
         $mime = '';
+        $ext = '';
+
         // 投稿のContent-Typeからファイルのタイプを決定する
         if (strpos($_FILES['file']['type'], 'jpeg') !== false) {
             $mime = 'image/jpeg';
+            $ext = 'jpg';
         } elseif (strpos($_FILES['file']['type'], 'png') !== false) {
             $mime = 'image/png';
+            $ext = 'png';
         } elseif (strpos($_FILES['file']['type'], 'gif') !== false) {
             $mime = 'image/gif';
+            $mine = 'gif';
         } else {
             $this->get('flash')->addMessage('notice', '投稿できる画像形式はjpgとpngとgifだけです');
             return redirect($response, '/', 302);
@@ -417,10 +424,16 @@ $app->post('/', function (Request $request, Response $response) {
         $ps->execute([
           $me['id'],
           $mime,
-          file_get_contents($_FILES['file']['tmp_name']),
+//          file_get_contents($_FILES['file']['tmp_name']),
+          '', # イメージデータは保存しない
           $params['body'],
         ]);
         $pid = $db->lastInsertId();
+
+        # バイナリを保存する
+        $image_file_path = IMAGE_DIR . "/{$pid}.{$ext}";
+        file_put_contents($image_file_path, $_FILES['file']['tmp_name']);
+
         return redirect($response, "/posts/{$pid}", 302);
     } else {
         $this->get('flash')->addMessage('notice', '画像が必須です');
@@ -440,7 +453,12 @@ $app->get('/image/{id}.{ext}', function (Request $request, Response $response, $
         ($args['ext'] == 'png' && $post['mime'] == 'image/png') ||
         ($args['ext'] == 'gif' && $post['mime'] == 'image/gif')) {
         $response->getBody()->write($post['imgdata']);
-        file_put_contents('./xhprof/profile.xhprof', json_encode(tideways_xhprof_disable()));
+//        file_put_contents('./xhprof/profile.xhprof', json_encode(tideways_xhprof_disable()));
+
+        $image_file_path = IMAGE_DIR . "/{$args['id']}.{$args['ext']}";
+        error_log($image_file_path);
+        file_put_contents($image_file_path, $post['imgdata']);
+
         return $response->withHeader('Content-Type', $post['mime']);
     }
     $response->getBody()->write('404');
