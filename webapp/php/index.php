@@ -330,6 +330,7 @@ $app->get('/logout', function (Request $request, Response $response) {
 });
 
 $app->get('/', function (Request $request, Response $response) {
+//    tideways_xhprof_enable();
     $me = $this->get('helper')->get_session_user();
 
     $db = $this->get('db');
@@ -338,7 +339,7 @@ $app->get('/', function (Request $request, Response $response) {
     $ps->execute();
     $results = $ps->fetchAll(PDO::FETCH_ASSOC);
     $posts = $this->get('helper')->make_posts2($results);
-//    var_dump($posts);
+//    file_put_contents('./xhprof/profile.xhprof', json_encode(tideways_xhprof_disable()));
     return $this->get('view')->render($response, 'index.php', [
         'posts' => $posts,
         'me' => $me,
@@ -428,6 +429,7 @@ $app->post('/', function (Request $request, Response $response) {
 });
 
 $app->get('/image/{id}.{ext}', function (Request $request, Response $response, $args) {
+//    tideways_xhprof_enable();
     if ($args['id'] == 0) {
         return $response;
     }
@@ -438,9 +440,12 @@ $app->get('/image/{id}.{ext}', function (Request $request, Response $response, $
         ($args['ext'] == 'png' && $post['mime'] == 'image/png') ||
         ($args['ext'] == 'gif' && $post['mime'] == 'image/gif')) {
         $response->getBody()->write($post['imgdata']);
+        file_put_contents('./xhprof/profile.xhprof', json_encode(tideways_xhprof_disable()));
         return $response->withHeader('Content-Type', $post['mime']);
     }
     $response->getBody()->write('404');
+
+//    file_put_contents('./xhprof/profile.xhprof', json_encode(tideways_xhprof_disable()));
     return $response->withStatus(404);
 });
 
