@@ -1,6 +1,7 @@
 vendor/
 portal/log
 portal/tmp
+.DS_Store
 
 ### Portal
 # Ignore bundler config.
@@ -18,3 +19,4 @@ portal/tmp
 .vagrant
 .idea
 webapp/logs/*
+webapp/php/xhprof/*
