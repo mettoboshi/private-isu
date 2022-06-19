@@ -17,3 +17,4 @@ portal/tmp
 /portal/tmp
 .vagrant
 .idea
+webapp/logs/*
