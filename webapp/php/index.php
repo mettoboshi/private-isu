@@ -353,11 +353,11 @@ $app->get('/posts', function (Request $request, Response $response) {
     $params = $request->getQueryParams();
     $max_created_at = $params['max_created_at'] ?? null;
     $db = $this->get('db');
-    $ps = $db->prepare('SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` WHERE `created_at` <= ? ORDER BY `created_at` DESC');
-//    $ps = $db->prepare('SELECT `p.id`, `p.use_id`, `p.body`, `p.mine`, `p.created_at`, `u.account_name` FROM `posts` AS p JOIN `users` AS u ON (p.user_id = u.id) WHERE u.del_flg = 0 ORDER BY p.created_at DESC LIMIT 20');
+//    $ps = $db->prepare('SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` WHERE `created_at` <= ? ORDER BY `created_at` DESC');
+    $ps = $db->prepare('SELECT `p.id`, `p.use_id`, `p.body`, `p.mine`, `p.created_at`, `u.account_name` FROM `posts` AS p JOIN `users` AS u ON (p.user_id = u.id) WHERE u.del_flg = 0 ORDER BY p.created_at DESC LIMIT 20');
     $ps->execute([$max_created_at === null ? null : $max_created_at]);
     $results = $ps->fetchAll(PDO::FETCH_ASSOC);
-    $posts = $this->get('helper')->make_posts($results);
+    $posts = $this->get('helper')->make_posts2($results);
 
     return $this->get('view')->render($response, 'posts.php', ['posts' => $posts]);
 });
@@ -561,11 +561,11 @@ $app->get('/@{account_name}', function (Request $request, Response $response, $a
         return $response->withStatus(404);
     }
 
-    $ps = $db->prepare('SELECT `id`, `user_id`, `body`, `created_at`, `mime` FROM `posts` WHERE `user_id` = ? ORDER BY `created_at` DESC');
-//    $ps = $db->prepare('SELECT `p.id`, `p.use_id`, `p.body`, `p.mine`, `p.created_at`, `u.account_name` FROM `posts` AS p JOIN `users` AS u ON (p.user_id = u.id) WHERE u.del_flg = 0 ORDER BY p.created_at DESC LIMIT 20');
+//    $ps = $db->prepare('SELECT `id`, `user_id`, `body`, `created_at`, `mime` FROM `posts` WHERE `user_id` = ? ORDER BY `created_at` DESC');
+    $ps = $db->prepare('SELECT `p.id`, `p.use_id`, `p.body`, `p.mine`, `p.created_at`, `u.account_name` FROM `posts` AS p JOIN `users` AS u ON (p.user_id = u.id) WHERE u.del_flg = 0 ORDER BY p.created_at DESC LIMIT 20');
     $ps->execute([$user['id']]);
     $results = $ps->fetchAll(PDO::FETCH_ASSOC);
-    $posts = $this->get('helper')->make_posts($results);
+    $posts = $this->get('helper')->make_posts2($results);
 
     $comment_count = $this->get('helper')->fetch_first('SELECT COUNT(*) AS count FROM `comments` WHERE `user_id` = ?', $user['id'])['count'];
 
